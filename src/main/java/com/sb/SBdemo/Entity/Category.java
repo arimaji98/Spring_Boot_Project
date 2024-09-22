@@ -1,10 +1,12 @@
 package com.sb.SBdemo.Entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 @AllArgsConstructor
@@ -20,10 +22,11 @@ public class Category {
     private int catId;
 
     @Column(name = "CATEGORY_TITLE")
-    @NotBlank(message = "Category title should not be null or empty")
     private String catTitle;
 
     @Column(name = "CATEGORY_DESCRIPTION")
-    @NotBlank(message = "Category description should not be null or empty")
     private String catDescription;
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    private List<Post> post = new ArrayList<>();
 }

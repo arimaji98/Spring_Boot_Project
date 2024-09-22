@@ -1,5 +1,6 @@
 package com.sb.SBdemo.Service;
 
+import com.sb.SBdemo.Dto.StudentDto;
 import com.sb.SBdemo.Entity.Student;
 import com.sb.SBdemo.Exceptions.NoSuchElementExceptionHandler;
 import com.sb.SBdemo.Repo.StudentRepo;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class StudentServiceImpl implements StudentService {
@@ -21,20 +23,26 @@ public class StudentServiceImpl implements StudentService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<Student> create(Student student) {
+    public ResponseEntity<StudentDto> create(StudentDto studentDto) {
+        Student student = modelMapper.map(studentDto, Student.class);
         studentRepo.save(student);
         return new ResponseEntity("STUDENT DATA SAVED SUCCESSFULLY.", HttpStatus.OK);
     }
 
     @Override
-    public ResponseEntity<List<Student>> createAll(List<Student> students) {
+    public ResponseEntity<List<StudentDto>> createAll(List<StudentDto> studentDtoList) {
+        List<Student> students = studentDtoList.stream()
+                                               .map(dto -> modelMapper.map(dto, Student.class))
+                                               .collect(Collectors.toList());
         studentRepo.saveAll(students);
         return new ResponseEntity("ALL STUDENTS DATA SAVED SUCCESSFULLY.", HttpStatus.CREATED);
     }
 
     @Override
-    public ResponseEntity<List<Student>> getAll() {
-        List<Student> studentList = studentRepo.findAll();
+    public ResponseEntity<List<StudentDto>> getAll() {
+        List<StudentDto> studentList = studentRepo.findAll().stream()
+                                                  .map(dto -> modelMapper.map(dto, StudentDto.class))
+                                                  .collect(Collectors.toList());
         if (studentList.isEmpty()) {
             return new ResponseEntity("STUDENTS RECORD NOT FOUND", HttpStatus.NOT_FOUND);
         }
@@ -42,33 +50,40 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public ResponseEntity<Student> get(int studentId) {
-        Student id = studentRepo.findById(studentId).orElseThrow(() -> new NoSuchElementExceptionHandler("Student", "ID", studentId));
-        return ResponseEntity.of(Optional.of(id));
+    public ResponseEntity<StudentDto> get(int studentId) {
+        Student student = studentRepo.findById(studentId).orElseThrow(() -> new NoSuchElementExceptionHandler("Student"
+                , "ID", studentId));
+        StudentDto studentDto = modelMapper.map(student, StudentDto.class);
+        return ResponseEntity.of(Optional.of(studentDto));
     }
 
     @Override
-    public ResponseEntity<Student> getByName(String name) {
+    public ResponseEntity<StudentDto> getByName(String name) {
         Student studentName = studentRepo.findByName(name);
         if (studentName == null) {
             throw new NoSuchElementExceptionHandler("Student", "name", name);
         }
-        return ResponseEntity.of(Optional.of(studentName));
+        StudentDto studentDto = modelMapper.map(studentName, StudentDto.class);
+        return ResponseEntity.of(Optional.of(studentDto));
     }
 
     @Override
-    public ResponseEntity<ApiResponse> update(Student student) {
-        Student id = studentRepo.findById(student.getId()).orElseThrow(() -> new NoSuchElementExceptionHandler("Student", "ID", student.getId()));
+    public ResponseEntity<ApiResponse> update(StudentDto studentDto) {
+        Student id = studentRepo.findById(studentDto.getId()).orElseThrow(() -> new NoSuchElementExceptionHandler(
+                "Student", "ID", studentDto.getId()));
 
-        Student stdnt = modelMapper.map(student, Student.class);
-        studentRepo.save(stdnt);
-        return new ResponseEntity(new ApiResponse("Student record with ID " + student.getId() + " updated successfully", true), HttpStatus.OK);
+        Student updatedStudent = modelMapper.map(studentDto, Student.class);
+        studentRepo.save(updatedStudent);
+        return new ResponseEntity(new ApiResponse("Student record with ID " + updatedStudent.getId() + " updated " +
+                                                  "successfully", true), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<ApiResponse> remove(int studentId) {
-        Student id = studentRepo.findById(studentId).orElseThrow(() -> new NoSuchElementExceptionHandler("Student", "ID", studentId));
+        Student id = studentRepo.findById(studentId).orElseThrow(() -> new NoSuchElementExceptionHandler("Student"
+                , "ID", studentId));
         studentRepo.deleteById(studentId);
-        return new ResponseEntity(new ApiResponse("Student record with ID " + studentId + " deleted successfully", true), HttpStatus.OK);
+        return new ResponseEntity(new ApiResponse("Student record with ID " + studentId + " deleted successfully",
+                                                  true), HttpStatus.OK);
     }
 }
